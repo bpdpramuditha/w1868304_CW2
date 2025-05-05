@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+      body {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f8f9fa;
+      }
+
+      .form-container {
+        width: 100%;
+        max-width: 400px;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .login-link {
+        color: black;
+        text-decoration: none;
+      }
+
+      .login-link:hover {
+        color: rgb(50, 50, 52);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="form-container">
+      <h2 class="text-center">Sign Up</h2>
+      <br />
+      <input id="firstname" class="form-control" placeholder="First Name" />
+      <br />
+      <input id="lastname" class="form-control" placeholder="Last Name" />
+      <br />
+      <input id="email" class="form-control" placeholder="Email" />
+      <br />
+      <input
+        id="password"
+        type="password"
+        class="form-control"
+        placeholder="Password"
+      />
+      <br />
+      <button id="send" class="btn btn-success w-100">Sign Up</button>
+      <br />
+      <br />
+      <a href="UserLogin.html" class="login-link"
+        >Already have an Account? Login here</a
+      >
+    </div>
+
+    <script>
+      $(document).ready(() => {
+        $("#send").click(() => {
+          var registerDetails = {
+            email: $("#email").val(),
+            password: $("#password").val(),
+            fn: $("#firstname").val(),
+            sn: $("#lastname").val(),
+          };
+
+          if (
+            !registerDetails.email ||
+            !registerDetails.password ||
+            !registerDetails.fn ||
+            !registerDetails.sn
+          ) {
+            alert("Please enter all required fields!");
+            return;
+          }
+
+          postRegister(registerDetails);
+        });
+      });
+
+      function postRegister(registerDetails) {
+        $.post("http://localhost:5000/registerUser", registerDetails, (res) => {
+          if (!res.success) {
+            alert(res.message);
+          } else {
+            alert("User Registered Successfully!");
+            window.location.href = "userLogin.html";
+          }
+        }).fail(() => {
+          alert("Error sending message. Check server connection.");
+        });
+      }
+    </script>
+  </body>
+</html>
