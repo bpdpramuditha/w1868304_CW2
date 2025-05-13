@@ -10,79 +10,114 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
       body {
-        height: 100vh;
+        background-color: #000;
+        color: white;
         display: flex;
         justify-content: center;
         align-items: center;
-        background-color: #f8f9fa;
+        height: 100vh;
+        margin: 0;
       }
 
-      .form-container {
+      .signup-container {
         width: 100%;
-        max-width: 400px;
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        max-width: 360px;
+        padding: 30px 20px;
+        background-color: #121212;
+        border-radius: 20px;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+      }
+
+      .form-control {
+        background-color: #1e1e1e;
+        color: white;
+        border: 1px solid #444;
+      }
+
+      .form-control::placeholder {
+        color: #aaa;
+      }
+
+      .btn-success {
+        background-color: #28a745;
+        border: none;
+      }
+
+      .btn-success:hover {
+        background-color: #218838;
       }
 
       .login-link {
-        color: black;
+        display: block;
+        text-align: center;
+        color: #aaa;
+        margin-top: 15px;
         text-decoration: none;
       }
 
       .login-link:hover {
-        color: rgb(50, 50, 52);
+        color: white;
+      }
+
+      h2 {
+        margin-bottom: 25px;
+        text-align: center;
+        font-weight: bold;
       }
     </style>
   </head>
   <body>
-    <div class="form-container">
-      <h2 class="text-center">Sign Up</h2>
-      <br />
-      <input id="firstname" class="form-control" placeholder="First Name" />
-      <br />
-      <input id="lastname" class="form-control" placeholder="Last Name" />
-      <br />
-      <input id="email" class="form-control" placeholder="Email" />
-      <br />
+    <div class="signup-container">
+      <h2>Sign Up</h2>
+      <input
+        id="firstname"
+        class="form-control mb-3"
+        placeholder="First Name"
+      />
+      <input id="lastname" class="form-control mb-3" placeholder="Last Name" />
+      <input id="email" class="form-control mb-3" placeholder="Email" />
       <input
         id="password"
         type="password"
-        class="form-control"
+        class="form-control mb-3"
         placeholder="Password"
       />
-      <br />
-      <button id="send" class="btn btn-success w-100">Sign Up</button>
-      <br />
-      <br />
+      <button id="send" class="btn btn-success w-100 mb-2">Sign Up</button>
       <a href="UserLogin.html" class="login-link"
-        >Already have an Account? Login here</a
+        >Already have an account? Login here</a
       >
     </div>
 
     <script>
       $(document).ready(() => {
-        $("#send").click(() => {
-          var registerDetails = {
-            email: $("#email").val(),
-            password: $("#password").val(),
-            fn: $("#firstname").val(),
-            sn: $("#lastname").val(),
+        $("#send").click(() => handleSignup());
+
+        $("#firstname, #lastname, #email, #password").keypress((e) => {
+          if (e.which === 13 || e.key === "Enter") {
+            handleSignup();
+          }
+        });
+
+        function handleSignup() {
+          const registerDetails = {
+            fn: $("#firstname").val().trim(),
+            sn: $("#lastname").val().trim(),
+            email: $("#email").val().trim(),
+            password: $("#password").val().trim(),
           };
 
           if (
-            !registerDetails.email ||
-            !registerDetails.password ||
             !registerDetails.fn ||
-            !registerDetails.sn
+            !registerDetails.sn ||
+            !registerDetails.email ||
+            !registerDetails.password
           ) {
             alert("Please enter all required fields!");
             return;
           }
 
           postRegister(registerDetails);
-        });
+        }
       });
 
       function postRegister(registerDetails) {
@@ -91,7 +126,7 @@
             alert(res.message);
           } else {
             alert("User Registered Successfully!");
-            window.location.href = "userLogin.html";
+            window.location.href = "UserLogin.html";
           }
         }).fail(() => {
           alert("Error sending message. Check server connection.");
