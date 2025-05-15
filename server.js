@@ -3,8 +3,11 @@ const session = require('express-session')
 const UserService = require('./Services/UserService')
 const APIKeyService = require('./Services/APIKeyService')
 const apiKeyMiddleware = require('./Middleware/APIAuthMiddleware')
+const profileService = require('./Services/ProfileService');
 const  FetchCountryData = require('./Services/FetchCountryData')
+const followService = require('./Services/FollowService');
 const checkSession  = require('./Middleware/SessionMiddleware')
+const UserDAO = require('./DAOs/UserDAO');
 
 const app = express()
 const path = require('path')
@@ -12,6 +15,8 @@ const port = process.env.PORT || 3000
 app.use(express.json())
 app.use(express.static(__dirname))
 app.use(express.urlencoded({ extended: true }))
+
+
 
 app.use(session({
     key: 'user_id',
@@ -25,6 +30,7 @@ app.use(session({
         maxAge: 24*60*60*1000
     }
 }))
+
 
 app.post('/registerUser', async(req, res) => {
     const userService = new UserService()
@@ -52,12 +58,98 @@ app.get('/login', async (req, res) => {
     res.sendFile(path.join(__dirname, 'userLogin.html'));
 })
 
-app.get('/country/:name', checkSession, apiKeyMiddleware, async (req, res) => {
+app.post("/logout", checkSession, (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Session destruction error:", err);
+      return res.status(500).json({ success: false, message: "Logout failed" });
+    }
+    res.clearCookie("user_id"); 
+    return res.json({ success: true, message: "Logged out successfully" });
+  });
+});
+
+
+
+app.get("/sessionUser", checkSession, (req, res) => {
+  res.json({ username: req.session.user.username });
+});
+
+app.get('/country/:name', checkSession, async (req, res) => {  //add apiKeyMiddleware
     const countryName = req.params.name;
     const fetchCountryData = new FetchCountryData();
     const data = await fetchCountryData.getCountryData(countryName);
     res.json(data);
 });
+
+app.get('/profile/:username',  async (req, res) => {
+  try {
+    const username = req.params.username;
+    const profileData = await profileService.getProfile(username);
+    res.json(profileData);
+  } catch (err) {
+    console.error('Error in route:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.post("/follow/:username", checkSession, async (req, res) => {
+  try {
+    await followService.followUser(req.session.user.username, req.params.username);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.delete("/unfollow/:username", checkSession, async (req, res) => {
+  try {
+    await followService.unfollowUser(req.session.user.username, req.params.username);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get("/isFollowing/:username", checkSession, async (req, res) => {
+  try {
+    const result = await followService.checkIfFollowing(req.session.user.username, req.params.username);
+    res.json({ isFollowing: result });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get("/feed", checkSession, async (req, res) => {
+  try {
+    const feed = await followService.getFeedPosts(req.session.user.username);
+    res.json(feed);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+app.get('/followers/:username', async (req, res) => {
+  try {
+    const username = req.params.username;
+    const followers = await UserDAO.getFollowers(username);
+    res.json(followers);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch followers' });
+  }
+});
+
+app.get('/following/:username', async (req, res) => {
+  try {
+    const username = req.params.username;
+    const following = await UserDAO.getFollowing(username);
+    res.json(following);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch following' });
+  }
+});
+
 
 app.listen(port, () => {
     console.log("Server is running on port", port);

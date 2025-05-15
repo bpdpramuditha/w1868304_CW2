@@ -27,8 +27,21 @@ class UserDAO{
     
     async create(userData) {
         try {
-            const sql = 'INSERT INTO users (email, password, fn, sn) VALUES (?, ?, ?, ?)';
-            const values = [userData.email, userData.password, userData.fn, userData.sn];
+            const username = `${userData.email.split("@")[0]}_${Math.floor(Math.random() * 10000)}`;
+            const profilePic = "https://via.placeholder.com/120x120?text=User";
+
+            const sql = `
+            INSERT INTO users (email, password, fn, sn, username, profile_picture)
+            VALUES (?, ?, ?, ?, ?, ?)
+            `;
+            const values = [
+            userData.email,
+            userData.password,        
+            userData.fn,             
+            userData.sn,              
+            username,
+            profilePic
+            ];
 
             const [rows] = await pool.query(sql, values);
             return createResponse(true, 'Record Inserted');
@@ -36,7 +49,37 @@ class UserDAO{
             console.error('Database Error:', err);
             throw err;
         }
-    }  
+    }
+
+    async getFollowers(username) {
+    try {
+      const [rows] = await pool.query(`
+        SELECT u.username, u.profile_picture 
+        FROM follows f
+        JOIN users u ON f.follower_id = u.id
+        WHERE f.followed_id = (SELECT id FROM users WHERE username = ?)
+      `, [username]);
+      return rows;
+    } catch (err) {
+      console.error('Database Error:', err);
+      throw err;
+    }
+  }
+
+  async getFollowing(username) {
+    try {
+      const [rows] = await pool.query(`
+        SELECT u.username, u.profile_picture 
+        FROM follows f
+        JOIN users u ON f.followed_id = u.id
+        WHERE f.follower_id = (SELECT id FROM users WHERE username = ?)
+      `, [username]);
+      return rows;
+    } catch (err) {
+      console.error('Database Error:', err);
+      throw err;
+    }
+  }
 }
 
 module.exports = UserDAO;

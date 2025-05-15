@@ -120,18 +120,7 @@
           <option value="commented">Most Commented</option>
         </select>
 
-        <div class="post-card">
-          <div class="d-flex align-items-center mb-2">
-            <img src="https://i.pravatar.cc/300" class="profile-img me-2" />
-            <strong>@user123</strong>
-          </div>
-          <img
-            src="https://via.placeholder.com/300x300"
-            class="img-fluid rounded mb-2"
-          />
-          <p><strong>12 likes</strong></p>
-          <p>This is a sample post caption.</p>
-        </div>
+        <div id="feedContainer"></div>
 
         <div id="countryData"></div>
       </div>
@@ -147,7 +136,7 @@
           ><i class="bi bi-plus-square fs-4"></i
         ></a>
         <a href="#" class="text-white"><i class="bi bi-heart fs-4"></i></a>
-        <a href="/profile.html" class="text-white"
+        <a href="profile.html" class="text-white"
           ><i class="bi bi-person fs-4"></i
         ></a>
       </div>
@@ -159,20 +148,27 @@
       let apiKey = "";
 
       $(document).ready(() => {
-        // On button click
-        $("#getCountryData").click(() => {
-          const country = $("#countryInput").val().trim();
-          if (!country) return alert("Please enter a country name.");
-          generateApiKey(() => getCountryInfo(country)); // Callback after key is ready
-        });
-
-        // On Enter key press in input
         $("#countryInput").keypress(function (e) {
           if (e.which === 13) {
             const country = $(this).val().trim();
             if (!country) return alert("Please enter a country name.");
-            generateApiKey(() => getCountryInfo(country)); // Same behavior
+
+            if (!apiKey) {
+              generateApiKey(() => {
+                getCountryInfo(country);
+              });
+            } else {
+              getCountryInfo(country);
+            }
           }
+        });
+
+        $(document).ready(() => {
+          $.get("http://localhost:5000/sessionUser", (sessionData) => {
+            const username = sessionData.username;
+            $("#sessionUsername").text(`@${username}`);
+            loadFeed();
+          });
         });
 
         // Toggle search section
@@ -183,7 +179,6 @@
         });
       });
 
-      // Generate API Key, then execute callback
       function generateApiKey(callback) {
         $.ajax({
           url: "http://localhost:5000/generateApiKey",
@@ -195,7 +190,6 @@
               alert(res.message);
             } else {
               apiKey = res.data;
-              console.log("API Key Generated: " + res.data);
               if (typeof callback === "function") callback();
             }
           },
@@ -204,7 +198,7 @@
               alert("You must be logged in to generate an API key.");
               window.location.href = "/userLogin.html";
             } else {
-              alert("Error Generating ApiKey. Check server connection.");
+              alert("Error Generating API Key. Check server connection.");
             }
           },
         });
@@ -216,24 +210,24 @@
           url: `http://localhost:5000/country/${encodeURIComponent(country)}`,
           type: "GET",
           headers: {
-            "X-API-Key": apiKey,
+            "x-api-key": apiKey,
           },
           xhrFields: { withCredentials: true },
           success: (data) => {
             const html = `
-              <div class="post-card">
-                <h5>${data.name}</h5>
-                ${
-                  data.flag
-                    ? `<img src="${data.flag}" class="img-fluid mb-2 rounded" alt="Flag of ${data.name}" />`
-                    : ""
-                }
-                <p><strong>Capital:</strong> ${data.capital || "N/A"}</p>
-                <p><strong>Currency:</strong> ${data.currency || "N/A"}</p>
-                <p><strong>Languages:</strong> ${
-                  data.languages?.toLocaleString() || "N/A"
-                }</p>
-              </div>`;
+                <div class="post-card">
+                  <h5>${data.name}</h5>
+                  ${
+                    data.flag
+                      ? `<img src="${data.flag}" class="img-fluid mb-2 rounded" alt="Flag of ${data.name}" />`
+                      : ""
+                  }
+                  <p><strong>Capital:</strong> ${data.capital || "N/A"}</p>
+                  <p><strong>Currency:</strong> ${data.currency || "N/A"}</p>
+                  <p><strong>Languages:</strong> ${
+                    data.languages?.toLocaleString() || "N/A"
+                  }</p>
+                </div>`;
             $("#countryData").html(html);
           },
           error: (xhr) => {
@@ -246,6 +240,49 @@
             );
           },
         });
+
+        function loadFeed() {
+          $.ajax({
+            url: "http://localhost:5000/feed",
+            type: "GET",
+            xhrFields: { withCredentials: true },
+            success: (posts) => {
+              if (!posts.length) {
+                $("#feedContainer").html(
+                  `<div class="text-center text-muted mt-4">No posts yet from followed users.</div>`
+                );
+                return;
+              }
+
+              const feedHTML = posts
+                .map(
+                  (post) => `
+                    <div class="post-card">
+                      <div class="d-flex align-items-center mb-2">
+                        <img src="${
+                          post.profile_picture
+                        }" class="profile-img me-2" />
+                        <strong>@${post.username}</strong>
+                      </div>
+                      <img src="${
+                        post.image_url
+                      }" class="img-fluid rounded mb-2" />
+                      <p><strong>${post.likes || 0} likes</strong></p>
+                      <p>${post.caption || ""}</p>
+                    </div>
+                  `
+                )
+                .join("");
+
+              $("#feedContainer").html(feedHTML);
+            },
+            error: () => {
+              $("#feedContainer").html(
+                `<div class="alert alert-danger">Failed to load feed.</div>`
+              );
+            },
+          });
+        }
       }
     </script>
   </body>

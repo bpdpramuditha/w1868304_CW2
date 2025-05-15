@@ -1,4 +1,4 @@
-const UserDAO = require('../DAOs/UserDAO')//Import User Dao
+const UserDAO = require('../DAOs/UserDAO')
 const {generateHash, verify} = require('../Utilities/bcryptUtil')
 const {createResponse} = require('../Utilities/createResponse')
 
@@ -43,6 +43,7 @@ class UserService{
                 req.session.user = {
                     id: user.id,
                     email: user.email,
+                    username: user.username
                   }
                   req.session.isAuthenticated = true
                 return{
