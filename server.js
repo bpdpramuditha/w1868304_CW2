@@ -69,8 +69,6 @@ app.post("/logout", checkSession, (req, res) => {
   });
 });
 
-
-
 app.get("/sessionUser", checkSession, (req, res) => {
   res.json({ username: req.session.user.username });
 });
@@ -136,6 +134,7 @@ app.get('/followers/:username', async (req, res) => {
     const followers = await UserDAO.getFollowers(username);
     res.json(followers);
   } catch (err) {
+    console.error('Error fetching followers:', err);
     res.status(500).json({ error: 'Failed to fetch followers' });
   }
 });
@@ -144,8 +143,9 @@ app.get('/following/:username', async (req, res) => {
   try {
     const username = req.params.username;
     const following = await UserDAO.getFollowing(username);
-    res.json(following);
+    res.json(following); 
   } catch (err) {
+    console.error('Error fetching following:', err);
     res.status(500).json({ error: 'Failed to fetch following' });
   }
 });

@@ -88,6 +88,7 @@
       }
     </style>
   </head>
+
   <body>
     <div class="app-container">
       <div class="top-nav">
@@ -116,6 +117,8 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+      let currentUsername = ""; // 🔧 Global to fix "username not defined"
+
       $("#logoutBtn").click(() => {
         $.ajax({
           url: "http://localhost:5000/logout",
@@ -132,40 +135,70 @@
 
       $(document).ready(() => {
         $.get("http://localhost:5000/sessionUser", (sessionData) => {
-          const username = sessionData.username;
-          loadUserProfile(username);
+          currentUsername = sessionData.username; // 🔧 assign to global
+          loadUserProfile(currentUsername);
         });
       });
 
       $(document).on("click", "#viewFollowers", function (e) {
         e.preventDefault();
-        $.get(`http://localhost:5000/followers/${username}`, (followers) => {
-          let listHTML = `<div class="post-card"><h5>Followers</h5>`;
-          followers.forEach((user) => {
-            listHTML += `
-        <div class="d-flex align-items-center mb-2">
-          <img src="${user.profile_picture}" class="profile-img me-2" />
-          <span>@${user.username}</span>
-        </div>`;
-          });
-          listHTML += `</div>`;
-          $("#countryData").html(listHTML);
-        });
+        $.get(
+          `http://localhost:5000/followers/${currentUsername}`,
+          (followers) => {
+            let listHTML = `<div class="post-card"><h5>Followers</h5>`;
+            followers.forEach((user) => {
+              listHTML += `
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="d-flex align-items-center">
+              <img src="${user.profile_picture}" class="profile-img me-2" />
+              <span>@${user.username}</span>
+            </div>
+            <button class="btn btn-sm btn-outline-danger unfollow-btn" data-username="${user.username}">
+              Unfollow
+            </button>
+          </div>`;
+            });
+            listHTML += `</div>`;
+            $("#profileContainer").html(listHTML);
+          }
+        );
       });
 
       $(document).on("click", "#viewFollowing", function (e) {
         e.preventDefault();
-        $.get(`http://localhost:5000/following/${username}`, (following) => {
-          let listHTML = `<div class="post-card"><h5>Following</h5>`;
-          following.forEach((user) => {
-            listHTML += `
-        <div class="d-flex align-items-center mb-2">
-          <img src="${user.profile_picture}" class="profile-img me-2" />
-          <span>@${user.username}</span>
-        </div>`;
-          });
-          listHTML += `</div>`;
-          $("#countryData").html(listHTML);
+        $.get(
+          `http://localhost:5000/following/${currentUsername}`,
+          (following) => {
+            let listHTML = `<div class="post-card"><h5>Following</h5>`;
+            following.forEach((user) => {
+              listHTML += `
+              <div class="d-flex align-items-center mb-2">
+                <img src="${user.profile_picture}" class="profile-img me-2" />
+                <span>@${user.username}</span>
+              </div>`;
+            });
+            listHTML += `</div>`;
+            $("#profileContainer").html(listHTML); // 🔧 fixed from #countryData
+          }
+        );
+      });
+
+      // Handle unfollow button click
+      $(document).on("click", ".unfollow-btn", function () {
+        const unfollowUsername = $(this).data("username");
+
+        $.ajax({
+          url: `http://localhost:5000/unfollow/${unfollowUsername}`,
+          type: "DELETE",
+          xhrFields: { withCredentials: true }, // if using cookies/session auth
+          success: () => {
+            alert(`Unfollowed @${unfollowUsername}`);
+            // Reload the followers list after unfollowing
+            $(`#viewFollowers`).trigger("click");
+          },
+          error: () => {
+            alert("Failed to unfollow user.");
+          },
         });
       });
 
@@ -177,41 +210,41 @@
             const posts = data.posts;
 
             const profileHTML = `
-          <div class="profile-header text-center mb-4">
-            <img src="${
-              user.profile_picture || "https://via.placeholder.com/100"
-            }" class="profile-img mb-2" />
-            <h5>@${user.username}</h5>
-            <p>${user.full_name || ""}</p>
-            <p>
-              <strong><a href="#" id="viewFollowers" class="text-white">${
-                data.followers
-              }</a></strong> Followers |
-              <strong><a href="#" id="viewFollowing" class="text-white">${
-                data.following
-              }</a></strong> Following
-            </p>
-            <button id="editProfile" class="btn btn-outline-light btn-sm mt-2">Edit Profile</button>
-          </div>
+            <div class="profile-header text-center mb-4">
+              <img src="${
+                user.profile_picture || "https://via.placeholder.com/100"
+              }" class="profile-img mb-2" />
+              <h5>@${user.username}</h5>
+              <p>${user.full_name || ""}</p>
+              <p>
+                <strong><a href="#" id="viewFollowers" class="text-white">${
+                  data.followers
+                }</a></strong> Followers |
+                <strong><a href="#" id="viewFollowing" class="text-white">${
+                  data.following
+                }</a></strong> Following
+              </p>
+              <button id="editProfile" class="btn btn-outline-light btn-sm mt-2">Edit Profile</button>
+            </div>
 
-          <div class="post-grid d-flex flex-wrap gap-2 justify-content-center">
-            ${posts
-              .map(
-                (post) => `
-              <img src="${post.image_url}" alt="Post" style="width: 100px; height: 100px; object-fit: cover;" class="rounded" />
-            `
-              )
-              .join("")}
-          </div>`;
+            <div class="post-grid d-flex flex-wrap gap-2 justify-content-center">
+              ${posts
+                .map(
+                  (post) =>
+                    `<img src="${post.image_url}" alt="Post" style="width: 100px; height: 100px; object-fit: cover;" class="rounded" />`
+                )
+                .join("")}
+            </div>
+          `;
 
             $("#profileContainer").html(profileHTML);
           }
         ).fail((err) => {
           $("#profileContainer").html(`
-          <div class="alert alert-danger">Failed to load profile: ${
-            err.responseJSON?.message || "Server error"
-          }</div>
-        `);
+            <div class="alert alert-danger">Failed to load profile: ${
+              err.responseJSON?.message || "Server error"
+            }</div>
+          `);
         });
       }
     </script>
