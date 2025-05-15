@@ -8,6 +8,7 @@ const  FetchCountryData = require('./Services/FetchCountryData')
 const followService = require('./Services/FollowService');
 const checkSession  = require('./Middleware/SessionMiddleware')
 const UserDAO = require('./DAOs/UserDAO');
+const blogPostService = require('./Services/BlogPostService');
 
 const app = express()
 const path = require('path')
@@ -58,7 +59,7 @@ app.get('/login', async (req, res) => {
     res.sendFile(path.join(__dirname, 'userLogin.html'));
 })
 
-app.post("/logout", checkSession, (req, res) => {
+app.post('/logout', checkSession, (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       console.error("Session destruction error:", err);
@@ -69,7 +70,7 @@ app.post("/logout", checkSession, (req, res) => {
   });
 });
 
-app.get("/sessionUser", checkSession, (req, res) => {
+app.get('/sessionUser', checkSession, (req, res) => {
   res.json({ username: req.session.user.username });
 });
 
@@ -91,7 +92,7 @@ app.get('/profile/:username',  async (req, res) => {
   }
 });
 
-app.post("/follow/:username", checkSession, async (req, res) => {
+app.post('/follow/:username', checkSession, async (req, res) => {
   try {
     await followService.followUser(req.session.user.username, req.params.username);
     res.json({ success: true });
@@ -100,7 +101,7 @@ app.post("/follow/:username", checkSession, async (req, res) => {
   }
 });
 
-app.delete("/unfollow/:username", checkSession, async (req, res) => {
+app.delete('/unfollow/:username', checkSession, async (req, res) => {
   try {
     await followService.unfollowUser(req.session.user.username, req.params.username);
     res.json({ success: true });
@@ -109,7 +110,7 @@ app.delete("/unfollow/:username", checkSession, async (req, res) => {
   }
 });
 
-app.get("/isFollowing/:username", checkSession, async (req, res) => {
+app.get('/isFollowing/:username', checkSession, async (req, res) => {
   try {
     const result = await followService.checkIfFollowing(req.session.user.username, req.params.username);
     res.json({ isFollowing: result });
@@ -117,16 +118,6 @@ app.get("/isFollowing/:username", checkSession, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
-app.get("/feed", checkSession, async (req, res) => {
-  try {
-    const feed = await followService.getFeedPosts(req.session.user.username);
-    res.json(feed);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
 
 app.get('/followers/:username', async (req, res) => {
   try {
@@ -148,6 +139,38 @@ app.get('/following/:username', async (req, res) => {
     console.error('Error fetching following:', err);
     res.status(500).json({ error: 'Failed to fetch following' });
   }
+});
+
+
+app.post('/createBlog', checkSession, async (req, res) => {
+  const { title, content, country, date_of_visit } = req.body;
+  const response = await blogPostService.createPost(req.session.user.id, title, content, country, date_of_visit);
+  res.json(response);
+});
+
+
+app.get('/feed', async (req, res) => {
+  const posts = await blogPostService.getAllPosts();
+  res.json(posts);
+});
+
+
+app.get('/:id', async (req, res) => {
+  const response = await blogPostService.getPostById(req.params.id);
+  res.status(response.success ? 200 : 404).json(response);
+});
+
+
+app.put('/updateBlog/:id', checkSession, async (req, res) => {
+  const { title, content, country, date_of_visit } = req.body;
+  const response = await blogPostService.updatePost(req.params.id, req.session.user.id, title, content, country, date_of_visit);
+  res.status(response.success ? 200 : 403).json(response);
+});
+
+
+app.delete('/deleteBlog/:id', checkSession, async (req, res) => {
+  const response = await blogPostService.deletePost(req.params.id, req.session.user.id);
+  res.status(response.success ? 200 : 403).json(response);
 });
 
 

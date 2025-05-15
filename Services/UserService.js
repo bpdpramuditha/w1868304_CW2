@@ -4,7 +4,7 @@ const { createResponse } = require('../Utilities/createResponse');
 
 class UserService {
     constructor() {
-        this.userDAO = userDAO; // ✅ just assign the imported instance
+        this.userDAO = userDAO; 
     }
 
     async create(req) {
