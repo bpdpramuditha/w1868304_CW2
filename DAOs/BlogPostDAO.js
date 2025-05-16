@@ -32,16 +32,23 @@ class BlogPostDAO {
     }
   }
 
-  async getPostById(postId) {
-    try {
-      const sql = 'SELECT * FROM blog_posts WHERE id = ?';
-      const [rows] = await pool.query(sql, [postId]);
-      return rows[0];
-    } catch (err) {
-      console.error('Database Error in getPostById:', err);
-      throw err;
-    }
+  async getPostsByUserId(userId) {
+  try {
+    const sql = 'SELECT * FROM blog_posts WHERE user_id = ? ORDER BY created_at DESC';
+    const [rows] = await pool.query(sql, [userId]);
+    return {
+      success: true,
+      data: rows,
+    };
+  } catch (err) {
+    console.error('Database Error in getPostsByUserId:', err);
+    return {
+      success: false,
+      message: 'Failed to fetch posts',
+    };
   }
+}
+
 
   async updatePost(postId, userId, title, content, country, dateOfVisit) {
     try {

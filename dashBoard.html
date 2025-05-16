@@ -132,7 +132,7 @@
         <a href="#" id="searchIcon" class="text-white">
           <i class="bi bi-search fs-4"></i>
         </a>
-        <a href="#" class="text-white"
+        <a href="createBlog.html" class="text-white"
           ><i class="bi bi-plus-square fs-4"></i
         ></a>
         <a href="#" class="text-white"><i class="bi bi-heart fs-4"></i></a>
@@ -146,32 +146,28 @@
 
     <script>
       let apiKey = "";
+      loadFeed();
 
       $(document).ready(() => {
+        // Handle Enter key press on search
         $("#countryInput").keypress(function (e) {
           if (e.which === 13) {
             const country = $(this).val().trim();
             if (!country) return alert("Please enter a country name.");
 
             if (!apiKey) {
-              generateApiKey(() => {
-                getCountryInfo(country);
-              });
+              generateApiKey(() => getCountryInfo(country));
             } else {
               getCountryInfo(country);
             }
           }
         });
 
-        $(document).ready(() => {
-          $.get("http://localhost:5000/sessionUser", (sessionData) => {
-            const username = sessionData.username;
-            $("#sessionUsername").text(`@${username}`);
-            loadFeed();
-          });
+        $.get("http://localhost:5000/sessionUser", (sessionData) => {
+          const username = sessionData.username;
+          $("#sessionUsername").text(`@${username}`);
         });
 
-        // Toggle search section
         $("#searchIcon").click((e) => {
           e.preventDefault();
           $("#searchSection").slideToggle();
@@ -204,7 +200,6 @@
         });
       }
 
-      // Fetch country info
       function getCountryInfo(country) {
         $.ajax({
           url: `http://localhost:5000/country/${encodeURIComponent(country)}`,
@@ -240,49 +235,56 @@
             );
           },
         });
+      }
 
-        function loadFeed() {
-          $.ajax({
-            url: "http://localhost:5000/feed",
-            type: "GET",
-            xhrFields: { withCredentials: true },
-            success: (posts) => {
-              if (!posts.length) {
-                $("#feedContainer").html(
-                  `<div class="text-center text-muted mt-4">No posts yet from followed users.</div>`
-                );
-                return;
-              }
-
-              const feedHTML = posts
-                .map(
-                  (post) => `
-                    <div class="post-card">
-                      <div class="d-flex align-items-center mb-2">
-                        <img src="${
-                          post.profile_picture
-                        }" class="profile-img me-2" />
-                        <strong>@${post.username}</strong>
-                      </div>
-                      <img src="${
-                        post.image_url
-                      }" class="img-fluid rounded mb-2" />
-                      <p><strong>${post.likes || 0} likes</strong></p>
-                      <p>${post.caption || ""}</p>
-                    </div>
-                  `
-                )
-                .join("");
-
-              $("#feedContainer").html(feedHTML);
-            },
-            error: () => {
+      function loadFeed() {
+        $.ajax({
+          url: "http://localhost:5000/feed",
+          type: "GET",
+          xhrFields: { withCredentials: true },
+          success: (posts) => {
+            if (!posts.length) {
               $("#feedContainer").html(
-                `<div class="alert alert-danger">Failed to load feed.</div>`
+                `<div class="text-center text-muted mt-4">No blog posts available.</div>`
               );
-            },
-          });
-        }
+              return;
+            }
+
+            const feedHTML = posts
+              .map((post) => {
+                const title = post.title || "Untitled";
+                const content = post.content || "";
+                const country = post.country || "Unknown";
+                const visitedDate = post.date_of_visit
+                  ? new Date(post.date_of_visit).toLocaleDateString()
+                  : "N/A";
+                const createdAt = post.created_at
+                  ? new Date(post.created_at).toLocaleString()
+                  : "Unknown";
+
+                return `
+            <div class="post-card border rounded p-3 mb-3 shadow-sm">
+              <div class="d-flex align-items-center mb-2">
+                <img src="${post.profile_picture}" class="profile-img me-2" />
+                <strong>@${post.username}</strong>
+              </div>
+              <h5>${title}</h5>
+              <p>${content}</p>
+              <p><strong>Country:</strong> ${country}</p>
+              <p><strong>Visited on:</strong> ${visitedDate}</p>
+              <small class="text-secondary">Posted: ${createdAt}</small>
+            </div>`;
+              })
+              .join("");
+
+            $("#feedContainer").html(feedHTML);
+          },
+          error: () => {
+            $("#feedContainer").html(
+              `<div class="alert alert-danger">Failed to load feed.</div>`
+            );
+          },
+        });
       }
     </script>
   </body>

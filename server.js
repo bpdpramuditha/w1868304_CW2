@@ -155,7 +155,7 @@ app.get('/feed', async (req, res) => {
 });
 
 
-app.get('/:id', async (req, res) => {
+app.get('/feed/:id', async (req, res) => {
   const response = await blogPostService.getPostById(req.params.id);
   res.status(response.success ? 200 : 404).json(response);
 });

@@ -14,7 +14,7 @@ class BlogPostService {
   }
 
   async getPostById(postId) {
-    const post = await blogPostDAO.getPostById(postId);
+    const post = await blogPostDAO.getPostsByUserId(postId);
     if (!post) return { success: false, message: 'Post not found' };
     return { success: true, data: post };
   }
