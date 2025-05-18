@@ -18,7 +18,6 @@ app.use(express.static(__dirname))
 app.use(express.urlencoded({ extended: true }))
 
 
-
 app.use(session({
     key: 'user_id',
     secret: process.env.JWT_SECRET || my_secret_key_,
@@ -74,11 +73,22 @@ app.get('/sessionUser', checkSession, (req, res) => {
   res.json({ username: req.session.user.username });
 });
 
-app.get('/country/:name', checkSession, async (req, res) => {  //add apiKeyMiddleware
+app.get('/country/:name', checkSession, apiKeyMiddleware, async (req, res) => {   
     const countryName = req.params.name;
     const fetchCountryData = new FetchCountryData();
     const data = await fetchCountryData.getCountryData(countryName);
+    
+    if (!data) {
+        return res.status(404).json({ error: 'Country not found or API error.' });
+    }
+
     res.json(data);
+});
+
+app.get('/countries', async (req, res) => { 
+    const fetchCountryData = new FetchCountryData();
+    const data = await fetchCountryData.getAllCountries(); 
+    res.json({ success: true, data });
 });
 
 app.get('/profile/:username',  async (req, res) => {

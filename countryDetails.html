@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Country Info</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background-color: black;
+        color: white;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+      }
+
+      .container {
+        max-width: 390px;
+        width: 100%;
+        padding: 20px;
+        background-color: #000;
+      }
+
+      .form-select {
+        background-color: #222;
+        color: white;
+        border: none;
+      }
+
+      .bottom-nav {
+        background-color: #000;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: fixed;
+        width: 100%;
+        max-width: 390px;
+        z-index: 1000;
+      }
+
+      .bottom-nav {
+        bottom: 0;
+        border-top: 1px solid #222;
+        justify-content: space-around;
+      }
+
+      .post-card {
+        background-color: #111;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h4 class="mb-3">Search Country Info</h4>
+      <select id="countrySelect" class="form-select mb-3">
+        <option value="">Select a country</option>
+      </select>
+      <div id="countryData"></div>
+    </div>
+
+    <div class="bottom-nav">
+      <a href="dashBoard.html" class="text-white"
+        ><i class="bi bi-house-fill fs-4"></i
+      ></a>
+      <a href="#" id="searchIcon" class="text-white"
+        ><i class="bi bi-search fs-4"></i
+      ></a>
+      <a href="createBlog.html" class="text-white"
+        ><i class="bi bi-plus-square fs-4"></i
+      ></a>
+      <a href="countryDetails.html" class="text-white"
+        ><i class="bi bi-heart fs-4"></i
+      ></a>
+      <a href="profile.html" class="text-white"
+        ><i class="bi bi-person fs-4"></i
+      ></a>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      let apiKey = "";
+
+      $(document).ready(() => {
+        fetchCountryList();
+
+        // Fetch country info on change
+        $("#countrySelect").on("change", function () {
+          const country = $(this).val();
+          if (!country) return;
+          if (!apiKey) {
+            generateApiKey(() => getCountryInfo(country));
+          } else {
+            getCountryInfo(country);
+          }
+        });
+
+        // Optional: trigger on Enter key
+        $("#countrySelect").on("keypress", function (e) {
+          if (e.which === 13) {
+            const country = $(this).val();
+            if (!country) return;
+            if (!apiKey) {
+              generateApiKey(() => getCountryInfo(country));
+            } else {
+              getCountryInfo(country);
+            }
+          }
+        });
+      });
+
+      function fetchCountryList() {
+        $.ajax({
+          url: "http://localhost:5000/countries",
+          type: "GET",
+          xhrFields: { withCredentials: true },
+          success: (res) => {
+            if (res.success && Array.isArray(res.data)) {
+              const select = $("#countrySelect");
+              res.data.forEach((country) => {
+                select.append(`<option value="${country}">${country}</option>`);
+              });
+            } else {
+              alert("Failed to load country list.");
+            }
+          },
+          error: () => {
+            alert("Error fetching country list from backend.");
+          },
+        });
+      }
+
+      function generateApiKey(callback) {
+        $.ajax({
+          url: "http://localhost:5000/generateApiKey",
+          type: "POST",
+          data: {},
+          xhrFields: { withCredentials: true },
+          success: (res) => {
+            if (!res.success) {
+              alert(res.message);
+            } else {
+              apiKey = res.data;
+              if (typeof callback === "function") callback();
+            }
+          },
+          error: (xhr) => {
+            if (xhr.status === 402) {
+              alert("You must be logged in to generate an API key.");
+              window.location.href = "/userLogin.html";
+            } else {
+              alert("Error Generating API Key. Check server connection.");
+            }
+          },
+        });
+      }
+
+      function getCountryInfo(country) {
+        $.ajax({
+          url: `http://localhost:5000/country/${encodeURIComponent(country)}`,
+          type: "GET",
+          headers: { "x-api-key": apiKey },
+          xhrFields: { withCredentials: true },
+          success: (data) => {
+            const html = `
+              <div class="post-card">
+                <h5>${data.name}</h5>
+                ${
+                  data.flag
+                    ? `<img src="${data.flag}" class="img-fluid mb-2 rounded" alt="Flag of ${data.name}" />`
+                    : ""
+                }
+                <p><strong>Capital:</strong> ${data.capital || "N/A"}</p>
+                <p><strong>Currency:</strong> ${data.currency || "N/A"}</p>
+                <p><strong>Languages:</strong> ${
+                  data.languages?.toLocaleString() || "N/A"
+                }</p>
+              </div>`;
+            $("#countryData").html(html);
+          },
+          error: (xhr) => {
+            let message = "Error fetching data.";
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+              message = xhr.responseJSON.error;
+            }
+            $("#countryData").html(
+              `<div class="alert alert-danger">${message}</div>`
+            );
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
