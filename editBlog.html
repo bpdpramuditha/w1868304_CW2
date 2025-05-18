@@ -168,7 +168,7 @@
           return;
         }
 
-        $.get(`http://localhost:5000/feed/${postId}`, function (data) {
+        $.get(`http://localhost:5000/blog/feed/${postId}`, function (data) {
           $("#title").val(data.title);
           $("#content").val(data.content);
           $("#country").val(data.country);
@@ -190,7 +190,7 @@
           };
 
           $.ajax({
-            url: `http://localhost:5000/updateBlog/${postId}`,
+            url: `http://localhost:5000/blog/updateBlog/${postId}`,
             type: "PUT",
             contentType: "application/json",
             data: JSON.stringify(updatedBlog),

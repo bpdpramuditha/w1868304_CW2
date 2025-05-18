@@ -121,14 +121,18 @@
       });
 
       function postRegister(registerDetails) {
-        $.post("http://localhost:5000/registerUser", registerDetails, (res) => {
-          if (!res.success) {
-            alert(res.message);
-          } else {
-            alert("User Registered Successfully!");
-            window.location.href = "UserLogin.html";
+        $.post(
+          "http://localhost:5000/user/registerUser",
+          registerDetails,
+          (res) => {
+            if (!res.success) {
+              alert(res.message);
+            } else {
+              alert("User Registered Successfully!");
+              window.location.href = "UserLogin.html";
+            }
           }
-        }).fail(() => {
+        ).fail(() => {
           alert("Error sending message. Check server connection.");
         });
       }

@@ -84,12 +84,10 @@
 
     <script>
       $(document).ready(() => {
-        // Click login
         $("#send").click(() => {
           handleLogin();
         });
 
-        // Press Enter in input fields
         $("#email, #password").keypress((e) => {
           if (e.which === 13 || e.key === "Enter") {
             handleLogin();
@@ -113,7 +111,7 @@
 
       function postLoginUser(loginDetails) {
         $.ajax({
-          url: "http://localhost:5000/login",
+          url: "http://localhost:5000/user/login",
           type: "POST",
           data: loginDetails,
           xhrFields: { withCredentials: true },

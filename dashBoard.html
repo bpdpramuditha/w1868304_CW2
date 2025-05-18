@@ -145,7 +145,7 @@
       let currentUser = "";
 
       $(document).ready(() => {
-        $.get("http://localhost:5000/sessionUser", (sessionData) => {
+        $.get("http://localhost:5000/user/sessionUser", (sessionData) => {
           currentUser = sessionData.username;
           $("#sessionUsername").text(`@${currentUser}`);
         });
@@ -161,7 +161,7 @@
 
       function loadFeed() {
         $.ajax({
-          url: "http://localhost:5000/feed",
+          url: "http://localhost:5000/blog/feed",
           type: "GET",
           xhrFields: { withCredentials: true },
           success: (posts) => {
@@ -222,7 +222,7 @@
         if (!confirm("Are you sure you want to delete this post?")) return;
 
         $.ajax({
-          url: `http://localhost:5000/deleteBlog/${postId}`,
+          url: `http://localhost:5000/blog/deleteBlog/${postId}`,
           type: "DELETE",
           xhrFields: { withCredentials: true },
           success: () => {
