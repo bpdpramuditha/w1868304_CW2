@@ -169,7 +169,7 @@ app.put('/updateBlog/:id', checkSession, async (req, res) => {
 
 
 app.delete('/deleteBlog/:id', checkSession, async (req, res) => {
-  const response = await blogPostService.deletePost(req.params.id, req.session.user.id);
+  const response = await blogPostService.deletePost(req.params.id);
   res.status(response.success ? 200 : 403).json(response);
 });
 

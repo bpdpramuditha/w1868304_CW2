@@ -66,10 +66,10 @@ class BlogPostDAO {
     }
   }
 
-  async deletePost(postId, userId) {
+  async deletePost(postId) {
     try {
-      const sql = 'DELETE FROM blog_posts WHERE id = ? AND user_id = ?';
-      const [result] = await pool.query(sql, [postId, userId]);
+      const sql = 'DELETE FROM blog_posts WHERE id = ?';
+      const [result] = await pool.query(sql, [postId]);
       return result.affectedRows > 0;
     } catch (err) {
       console.error('Database Error in deletePost:', err);

@@ -26,8 +26,8 @@ class BlogPostService {
       : { success: false, message: 'Update failed or unauthorized' };
   }
 
-  async deletePost(postId, userId) {
-    const success = await blogPostDAO.deletePost(postId, userId);
+  async deletePost(postId) {
+    const success = await blogPostDAO.deletePost(postId);
     return success
       ? { success: true, message: 'Post deleted' }
       : { success: false, message: 'Delete failed or unauthorized' };

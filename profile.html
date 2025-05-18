@@ -111,7 +111,7 @@
           ><i class="bi bi-house fs-4"></i
         ></a>
         <a href="#" class="text-white"><i class="bi bi-search fs-4"></i></a>
-        <a href="#" class="text-white"
+        <a href="createBlog.html" class="text-white"
           ><i class="bi bi-plus-square fs-4"></i
         ></a>
         <a href="#" class="text-white"><i class="bi bi-heart fs-4"></i></a>
@@ -124,6 +124,11 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
       let currentUsername = "";
+
+      function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
 
       $("#logoutBtn").click(() => {
         $.ajax({
@@ -142,52 +147,49 @@
       $(document).ready(() => {
         $.get("http://localhost:5000/sessionUser", (sessionData) => {
           currentUsername = sessionData.username;
-          loadUserProfile(currentUsername);
+          const profileUsername = getQueryParam("username") || currentUsername;
+          loadUserProfile(profileUsername);
         });
       });
 
       $(document).on("click", "#viewFollowers", function (e) {
         e.preventDefault();
-        $.get(
-          `http://localhost:5000/followers/${currentUsername}`,
-          (followers) => {
-            let listHTML = `<div class="post-card"><h5>Followers</h5>`;
-            followers.forEach((user) => {
-              listHTML += `
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                  <div class="d-flex align-items-center">
-                    <img src="${user.profile_picture}" class="profile-img me-1" />
-                    <span>@${user.username}</span>
-                  </div>
-                  <button class="btn btn-success btn-sm btn-primary ms-auto follow-btn" data-username="${user.username}">
-                    follow
-                  </button>
-                </div>`;
-            });
-            listHTML += `</div>`;
-            $("#profileContainer").html(listHTML);
-          }
-        );
+        const username = getQueryParam("username") || currentUsername;
+        $.get(`http://localhost:5000/followers/${username}`, (followers) => {
+          let listHTML = `<div class="post-card"><h5>Followers</h5>`;
+          followers.forEach((user) => {
+            listHTML += `
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center">
+                  <img src="${user.profile_picture}" class="profile-img me-1" />
+                  <a href="profile.html?username=${user.username}" class="text-white">@${user.username}</a>
+                </div>
+                <button class="btn btn-success btn-sm btn-primary ms-auto follow-btn" data-username="${user.username}">
+                  Follow
+                </button>
+              </div>`;
+          });
+          listHTML += `</div>`;
+          $("#profileContainer").html(listHTML);
+        });
       });
 
       $(document).on("click", "#viewFollowing", function (e) {
         e.preventDefault();
-        $.get(
-          `http://localhost:5000/following/${currentUsername}`,
-          (following) => {
-            let listHTML = `<div class="post-card"><h5>Following</h5>`;
-            following.forEach((user) => {
-              listHTML += `
-                <div class="d-flex align-items-center mb-2">
-                  <img src="${user.profile_picture}" class="profile-img me-1" />
-                  <span>@${user.username}</span>
-                  <button class="btn btn-sm btn-outline-danger unfollow-btn" data-username="${user.username}">Unfollow</button>
-                </div>`;
-            });
-            listHTML += `</div>`;
-            $("#profileContainer").html(listHTML);
-          }
-        );
+        const username = getQueryParam("username") || currentUsername;
+        $.get(`http://localhost:5000/following/${username}`, (following) => {
+          let listHTML = `<div class="post-card"><h5>Following</h5>`;
+          following.forEach((user) => {
+            listHTML += `
+              <div class="d-flex align-items-center mb-2">
+                <img src="${user.profile_picture}" class="profile-img me-1" />
+                <a href="profile.html?username=${user.username}" class="text-white">@${user.username}</a>
+                <button class="btn btn-sm btn-outline-danger unfollow-btn ms-auto" data-username="${user.username}">Unfollow</button>
+              </div>`;
+          });
+          listHTML += `</div>`;
+          $("#profileContainer").html(listHTML);
+        });
       });
 
       $(document).on("click", ".unfollow-btn", function () {
@@ -199,7 +201,7 @@
           xhrFields: { withCredentials: true },
           success: () => {
             alert(`Unfollowed @${unfollowUsername}`);
-            $(`#viewFollowers`).trigger("click");
+            $("#viewFollowing").trigger("click");
           },
           error: () => {
             alert("Failed to unfollow user.");
@@ -216,7 +218,7 @@
           xhrFields: { withCredentials: true },
           success: () => {
             alert(`Followed @${followUsername}`);
-            $("#viewFollowing").trigger("click");
+            $("#viewFollowers").trigger("click");
           },
           error: () => {
             alert("Failed to follow user.");
@@ -224,38 +226,85 @@
         });
       });
 
-      function loadUserProfile(username, userId) {
-        $.get(
-          `http://localhost:5000/profile/${encodeURIComponent(username)}`,
-          (data) => {
-            const user = data.user;
+      function loadUserProfile(username) {
+        $.get("http://localhost:5000/sessionUser", (sessionData) => {
+          const loggedInUsername = sessionData.username;
 
-            let profileHTML = `
-            <div class="profile-header text-center mb-4">
-              <img src="${
-                user.profile_picture || "https://via.placeholder.com/100"
-              }" class="profile-img mb-2" />
-              <h5>@${user.username}</h5>
-              <p>${user.full_name || ""}</p>
-              <p>
-                <strong><a href="#" id="viewFollowers" class="text-white">${
-                  data.followers
-                }</a></strong> Followers |
-                <strong><a href="#" id="viewFollowing" class="text-white">${
-                  data.following
-                }</a></strong> Following
-              </p>
-              <button id="editProfile" class="btn btn-outline-light btn-sm mt-2">Edit Profile</button>
-            </div>`;
+          $.get(
+            `http://localhost:5000/profile/${encodeURIComponent(username)}`,
+            (data) => {
+              const user = data.user;
 
-            $("#profileContainer").html(profileHTML);
-          }
-        ).fail((err) => {
-          $("#profileContainer").html(`
-      <div class="alert alert-danger">Failed to load profile: ${
-        err.responseJSON?.message || "Server error"
-      }</div>
-    `);
+              let profileHTML = `
+              <div class="profile-header text-center mb-4">
+                <img src="${
+                  user.profile_picture || "https://via.placeholder.com/100"
+                }" class="profile-img mb-2" />
+                <h5>@${user.username}</h5><br>
+                <p>
+                  <strong><a href="#" id="viewFollowers" class="text-white">${
+                    data.followers
+                  }</a></strong> Followers |
+                  <strong><a href="#" id="viewFollowing" class="text-white">${
+                    data.following
+                  }</a></strong> Following
+                </p>
+            `;
+
+              if (username === loggedInUsername) {
+                profileHTML += `<button id="editProfile" class="btn btn-outline-light btn-sm mt-2">Edit Profile</button></div>`;
+                $("#profileContainer").html(profileHTML);
+              } else {
+                $.get(
+                  `http://localhost:5000/isFollowing/${username}`,
+                  (followData) => {
+                    const isFollowing = followData.isFollowing;
+
+                    profileHTML += `
+                    <button id="followBtn" class="btn ${
+                      isFollowing ? "btn-danger" : "btn-success"
+                    } btn-sm mt-2">
+                      ${isFollowing ? "Unfollow" : "Follow"}
+                    </button></div>`;
+
+                    $("#profileContainer").html(profileHTML);
+
+                    $("#followBtn")
+                      .off("click")
+                      .on("click", function () {
+                        const action = $(this).text().trim();
+                        const method = action === "Follow" ? "POST" : "DELETE";
+                        const url = `http://localhost:5000/${
+                          action === "Follow" ? "follow" : "unfollow"
+                        }/${username}`;
+
+                        $.ajax({
+                          url,
+                          type: method,
+                          xhrFields: { withCredentials: true },
+                          success: () => {
+                            const newAction =
+                              action === "Follow" ? "Unfollow" : "Follow";
+                            const newClass =
+                              newAction === "Unfollow"
+                                ? "btn-danger"
+                                : "btn-success";
+
+                            $(this)
+                              .text(newAction)
+                              .removeClass("btn-success btn-danger")
+                              .addClass(newClass);
+                          },
+                          error: () => {
+                            alert(`Failed to ${action.toLowerCase()} user.`);
+                          },
+                        });
+                      });
+                  }
+                );
+              }
+            }
+          );
         });
       }
     </script>
