@@ -168,17 +168,6 @@
           return;
         }
 
-        $.get(`http://localhost:5000/blog/feed/${postId}`, function (data) {
-          $("#title").val(data.title);
-          $("#content").val(data.content);
-          $("#country").val(data.country);
-          $("#date_of_visit").val(data.date_of_visit);
-        }).fail(() => {
-          $("#message").html(
-            '<div class="alert alert-danger mt-2">Failed to load blog data.</div>'
-          );
-        });
-
         $("#editForm").submit(function (e) {
           e.preventDefault();
 

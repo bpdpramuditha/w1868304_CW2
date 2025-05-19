@@ -6,6 +6,7 @@ const countryRoutes = require('./Routes/countryRoutes');
 const profileRoutes = require('./Routes/profileRoutes');
 const followRoutes = require('./Routes/followRoutes');
 const blogRoutes = require('./Routes/blogRoutes');
+const interactionRoutes = require('./Routes/interactionRoutes');
 
 const app = express()
 const path = require('path')
@@ -36,6 +37,7 @@ app.use('/country', countryRoutes);
 app.use('/profile', profileRoutes);
 app.use('/follow', followRoutes);
 app.use('/blog', blogRoutes);
+app.use('/like', interactionRoutes);
 
 app.listen(port, () => {
   console.log('Server is running on port', port);

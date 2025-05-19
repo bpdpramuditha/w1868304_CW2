@@ -8,14 +8,6 @@ const getUserByUsername = async (username) => {
   return rows[0] || null;
 };
 
-const getUserPosts = async (userId) => {
-  const [rows] = await pool.query(
-    `SELECT image_url FROM posts WHERE user_id = ? ORDER BY created_at DESC`,
-    [userId]
-  );
-  return rows;
-};
-
 const getFollowerCount = async (userId) => {
   const [[{ followers }]] = await pool.query(
     `SELECT COUNT(*) AS followers FROM follows WHERE followed_id = ?`,
@@ -34,7 +26,6 @@ const getFollowingCount = async (userId) => {
 
 module.exports = {
   getUserByUsername,
-  getUserPosts,
   getFollowerCount,
   getFollowingCount,
 };

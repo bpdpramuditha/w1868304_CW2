@@ -6,15 +6,11 @@ const getProfile = async (username) => {
     throw new Error('User not found');
   }
 
-  const posts = await profileDB.getUserPosts(user.id);
   const followers = await profileDB.getFollowerCount(user.id);
   const following = await profileDB.getFollowingCount(user.id);
 
-  user.full_name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
-
   return {
     user,
-    posts,
     followers,
     following,
   };

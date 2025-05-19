@@ -108,7 +108,7 @@
             type="text"
             id="countryInput"
             class="form-control my-2"
-            placeholder="Enter country name"
+            placeholder="Search by username or country"
           />
         </div>
 
@@ -120,6 +120,7 @@
         </select>
 
         <div id="feedContainer"></div>
+      </div>
 
       <div class="bottom-nav">
         <a href="dashBoard.html" class="text-white"
@@ -131,7 +132,9 @@
         <a href="createBlog.html" class="text-white"
           ><i class="bi bi-plus-square fs-4"></i
         ></a>
-        <a href="countryDetails.html" class="text-white"><i class="bi bi-heart fs-4"></i></a>
+        <a href="countryDetails.html" class="text-white"
+          ><i class="bi bi-heart fs-4"></i
+        ></a>
         <a href="profile.html" class="text-white"
           ><i class="bi bi-person fs-4"></i
         ></a>
@@ -141,13 +144,12 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-      let apiKey = "";
       let currentUser = "";
+      let allPosts = [];
 
       $(document).ready(() => {
         $.get("http://localhost:5000/user/sessionUser", (sessionData) => {
           currentUser = sessionData.username;
-          $("#sessionUsername").text(`@${currentUser}`);
         });
 
         loadFeed();
@@ -157,58 +159,45 @@
           $("#searchSection").slideToggle();
           $("#countryInput").focus();
         });
+
+        let debounceTimer;
+        $("#countryInput").on("input", function () {
+          clearTimeout(debounceTimer);
+          const query = $(this).val().trim().toLowerCase();
+          debounceTimer = setTimeout(() => filterFeed(query), 300);
+        });
+
+        $("#sortPosts").change(() => {
+          const sortValue = $("#sortPosts").val();
+          sortFeed(sortValue);
+        });
       });
 
-      function loadFeed() {
+      async function loadFeed() {
         $.ajax({
           url: "http://localhost:5000/blog/feed",
           type: "GET",
           xhrFields: { withCredentials: true },
-          success: (posts) => {
-            if (!posts.length) {
-              $("#feedContainer").html(
-                `<div class="text-center text-muted mt-4">No blog posts available.</div>`
-              );
-              return;
-            }
-
-            const feedHTML = posts
-              .map((post) => {
-                const isMyPost = post.username === currentUser;
-                const title = post.title || "Untitled";
-                const content = post.content || "";
-                const country = post.country || "Unknown";
-                const visitedDate = post.date_of_visit
-                  ? new Date(post.date_of_visit).toLocaleDateString()
-                  : "N/A";
-                const createdAt = post.created_at
-                  ? new Date(post.created_at).toLocaleString()
-                  : "Unknown";
-
-                const actionButtons = isMyPost
-                  ? `<div class="mt-2">
-                      <button class="btn btn-sm btn-outline-warning me-2" onclick="editPost('${post.id}')">Edit</button>
-                      <button class="btn btn-sm btn-outline-danger" onclick="deletePost('${post.id}')">Delete</button>
-                    </div>`
-                  : "";
-
-                return `
-                  <div class="post-card border rounded p-3 mb-3 shadow-sm">
-                    <div class="d-flex align-items-center mb-2">
-                      <img src="${post.profile_picture}" class="profile-img me-2" />
-                      <strong><a href="profile.html?username=${post.username}" class="text-white">@${post.username}</a></strong>
-                    </div>
-                    <h5>${title}</h5>
-                    <p>${content}</p>
-                    <p><strong>Country:</strong> ${country}</p>
-                    <p><strong>Visited on:</strong> ${visitedDate}</p>
-                    <small class="text-secondary">Posted: ${createdAt}</small>
-                    ${actionButtons}
-                  </div>`;
+          success: async (posts) => {
+            const postsWithCounts = await Promise.all(
+              posts.map(async (post) => {
+                try {
+                  const response = await fetch(
+                    `http://localhost:5000/like/count/${post.id}`,
+                    { credentials: "include" }
+                  );
+                  const counts = await response.json();
+                  post.likes = parseInt(counts.likes) || 0;
+                  post.dislikes = parseInt(counts.dislikes) || 0;
+                } catch (err) {
+                  post.likes = 0;
+                  post.dislikes = 0;
+                }
+                return post;
               })
-              .join("");
-
-            $("#feedContainer").html(feedHTML);
+            );
+            allPosts = postsWithCounts;
+            displayPosts(allPosts);
           },
           error: () => {
             $("#feedContainer").html(
@@ -216,6 +205,109 @@
             );
           },
         });
+      }
+
+      function displayPosts(posts) {
+        if (!posts.length) {
+          $("#feedContainer").html(
+            `<div class="text-center text-muted mt-4">No blog posts available.</div>`
+          );
+          return;
+        }
+
+        const feedHTML = posts
+          .map((post) => {
+            const isMyPost = post.username === currentUser;
+            const title = post.title || "Untitled";
+            const content = post.content || "";
+            const country = post.country || "Unknown";
+            const visitedDate = post.date_of_visit
+              ? new Date(post.date_of_visit).toLocaleDateString()
+              : "N/A";
+            const createdAt = post.created_at
+              ? new Date(post.created_at).toLocaleString()
+              : "Unknown";
+
+            const likes = post.likes ?? 0;
+            const dislikes = post.dislikes ?? 0;
+
+            let interactionSection = `<div class="mt-3 d-flex align-items-center gap-3">`;
+
+            if (currentUser) {
+              interactionSection += `
+              <button class="btn btn-sm btn-outline-success" onclick="likePost('${post.id}')">
+                <i class="bi bi-hand-thumbs-up-fill"></i> ${likes}
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="dislikePost('${post.id}')">
+                <i class="bi bi-hand-thumbs-down-fill"></i> ${dislikes}
+              </button>`;
+            } else {
+              interactionSection += `
+              <div class="text-success"><i class="bi bi-hand-thumbs-up-fill"></i> ${likes}</div>
+              <div class="text-danger"><i class="bi bi-hand-thumbs-down-fill"></i> ${dislikes}</div>`;
+            }
+
+            interactionSection += `</div>`;
+
+            const actionButtons = isMyPost
+              ? `<div class="mt-2">
+                  <button class="btn btn-sm btn-outline-warning me-2" onclick="editPost('${post.id}')">Edit</button>
+                  <button class="btn btn-sm btn-outline-danger" onclick="deletePost('${post.id}')">Delete</button>
+                </div>`
+              : "";
+
+            return `
+            <div class="post-card border rounded p-3 mb-3 shadow-sm">
+              <div class="d-flex align-items-center mb-2">
+                <img src="${post.profile_picture}" class="profile-img me-2" />
+                <strong><a href="profile.html?username=${post.username}" class="text-white">@${post.username}</a></strong>
+              </div>
+              <h5>${title}</h5>
+              <p>${content}</p>
+              <p><strong>Country:</strong> ${country}</p>
+              <p><strong>Visited on:</strong> ${visitedDate}</p>
+              <small class="text-secondary">Posted: ${createdAt}</small>
+              ${interactionSection}
+              ${actionButtons}
+            </div>`;
+          })
+          .join("");
+
+        $("#feedContainer").html(feedHTML);
+      }
+
+      function filterFeed(query) {
+        if (!query) {
+          displayPosts(allPosts);
+          return;
+        }
+
+        const filtered = allPosts.filter((post) => {
+          const username = post.username?.toLowerCase() || "";
+          const country = post.country?.toLowerCase() || "";
+          return username.includes(query) || country.includes(query);
+        });
+
+        displayPosts(filtered);
+      }
+
+      function sortFeed(type) {
+        let sorted = [...allPosts];
+
+        switch (type) {
+          case "liked":
+            sorted.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+            break;
+          case "commented":
+            sorted.sort(() => 0); // Placeholder for future comment count
+            break;
+          default:
+            sorted.sort(
+              (a, b) => new Date(b.created_at) - new Date(a.created_at)
+            );
+        }
+
+        displayPosts(sorted);
       }
 
       function deletePost(postId) {
@@ -232,6 +324,36 @@
           error: () => {
             alert("Failed to delete post.");
           },
+        });
+      }
+
+      function likePost(postId) {
+        if (!currentUser) {
+          alert("You must be logged in to like a post.");
+          return;
+        }
+
+        $.ajax({
+          url: `http://localhost:5000/like/like/${postId}`,
+          type: "POST",
+          xhrFields: { withCredentials: true },
+          success: () => loadFeed(),
+          error: () => alert("Failed to like the post."),
+        });
+      }
+
+      function dislikePost(postId) {
+        if (!currentUser) {
+          alert("You must be logged in to dislike a post.");
+          return;
+        }
+
+        $.ajax({
+          url: `http://localhost:5000/like/dislike/${postId}`,
+          type: "POST",
+          xhrFields: { withCredentials: true },
+          success: () => loadFeed(),
+          error: () => alert("Failed to dislike the post."),
         });
       }
 
