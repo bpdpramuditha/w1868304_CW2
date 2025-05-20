@@ -105,19 +105,6 @@
             getCountryInfo(country);
           }
         });
-
-        // Optional: trigger on Enter key
-        $("#countrySelect").on("keypress", function (e) {
-          if (e.which === 13) {
-            const country = $(this).val();
-            if (!country) return;
-            if (!apiKey) {
-              generateApiKey(() => getCountryInfo(country));
-            } else {
-              getCountryInfo(country);
-            }
-          }
-        });
       });
 
       function fetchCountryList() {

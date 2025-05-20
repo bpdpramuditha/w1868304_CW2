@@ -138,8 +138,10 @@
           type: "POST",
           xhrFields: { withCredentials: true },
           success: () => {
-            window.location.href = "userLogin.html";
+            alert(currentUsername + " Logout Successfully!");
+            window.location.href = "dashBoard.html";
           },
+
           error: () => {
             alert("Logout failed.");
           },

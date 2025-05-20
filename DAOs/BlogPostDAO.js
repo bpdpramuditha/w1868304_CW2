@@ -32,22 +32,22 @@ class BlogPostDAO {
     }
   }
 
-  async getPostsByUserId(userId) {
-  try {
-    const sql = 'SELECT * FROM blog_posts WHERE user_id = ? ORDER BY created_at DESC';
-    const [rows] = await pool.query(sql, [userId]);
-    return {
-      success: true,
-      data: rows,
-    };
-  } catch (err) {
-    console.error('Database Error in getPostsByUserId:', err);
-    return {
-      success: false,
-      message: 'Failed to fetch posts',
-    };
+    async getPostsByUserId(userId) {
+    try {
+      const sql = 'SELECT * FROM blog_posts WHERE user_id = ? ORDER BY created_at DESC';
+      const [rows] = await pool.query(sql, [userId]);
+      return {
+        success: true,
+        data: rows,
+      };
+    } catch (err) {
+      console.error('Database Error in getPostsByUserId:', err);
+      return {
+        success: false,
+        message: 'Failed to fetch posts',
+      };
+    }
   }
-}
 
 
   async updatePost(postId, userId, title, content, country, dateOfVisit) {
@@ -67,15 +67,15 @@ class BlogPostDAO {
   }
 
   async deletePost(postId) {
-    try {
-      const sql = 'DELETE FROM blog_posts WHERE id = ?';
-      const [result] = await pool.query(sql, [postId]);
-      return result.affectedRows > 0;
-    } catch (err) {
-      console.error('Database Error in deletePost:', err);
-      throw err;
+      try {
+        const sql = 'DELETE FROM blog_posts WHERE id = ?';
+        const [result] = await pool.query(sql, [postId]);
+        return result.affectedRows > 0;
+      } catch (err) {
+        console.error('Database Error in deletePost:', err);
+        throw err;
+      }
     }
-  }
 }
 
 module.exports = new BlogPostDAO();

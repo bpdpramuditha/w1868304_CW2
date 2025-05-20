@@ -18,7 +18,7 @@ pool.getConnection()
     })
     .catch(err => {
         console.error('Database connection failed:', err.message);
-        process.exit(1); // Exit app on DB failure
+        process.exit(1); 
     });
 
 module.exports = pool;
