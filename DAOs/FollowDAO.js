@@ -32,22 +32,8 @@ const isFollowing = async (followerUsername, followedUsername) => {
   return rows.length > 0;
 };
 
-const getFollowedUsersPosts = async (userId) => {
-  const [rows] = await pool.query(`
-    SELECT p.image_url, p.caption, u.username, u.profile_picture
-    FROM posts p
-    JOIN users u ON u.id = p.user_id
-    JOIN follows f ON f.followed_id = u.id
-    WHERE f.follower_id = ?
-    ORDER BY p.created_at DESC
-  `, [userId]);
-
-  return rows;
-};
-
 module.exports = {
   followUser,
   unfollowUser,
   isFollowing,
-  getFollowedUsersPosts
 };
