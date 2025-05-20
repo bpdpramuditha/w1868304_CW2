@@ -22,6 +22,7 @@ const unfollowUser = async (followerUsername, followedUsername) => {
   await pool.query(`DELETE FROM follows WHERE follower_id = ? AND followed_id = ?`, [followerId, followedId]);
 };
 
+//Checks if a user (followerUsername) is following another user (followedUsername)
 const isFollowing = async (followerUsername, followedUsername) => {
   const followerId = await getUserIdByUsername(followerUsername);
   const followedId = await getUserIdByUsername(followedUsername);

@@ -145,7 +145,7 @@
           error: (xhr) => {
             if (xhr.status === 402) {
               alert("You must be logged in to generate an API key.");
-              window.location.href = "/userLogin.html";
+              window.location.href = "/dashBoard.html";
             } else {
               alert("Error Generating API Key. Check server connection.");
             }
